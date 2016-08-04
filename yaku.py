@@ -1,58 +1,79 @@
+#!python3
+
 from collections import Counter
 from operator import mul
 from itertools import combinations, permutations, product, chain
-from tile import Tile, TileManager
+from tile import Tile, TileManager, pic
 
 Mantsu, Pintsu, Tongtsu, East, South, West, North, Haku, Hatsu = "Mantsu", "Pintsu", "Tongtsu", "East", "South", "West", "North", "Haku", "Hatsu"
+
+# tileType
 shuhai, tsupai, chunchanpai, loutouhai = "shuhai", "tsupai", "chunchanpai", "loutouhai"
 
+# formType
 koutsu, shuntsu, kantsu, ddoitsu = "koutsu", "shuntsu", "kantsu", "ddoitsu"
 mentsu, atama = "mentsu", "atama"
 
 class YakuForm:
-	def __init__(self, tType, cType, range=None, menzen=True):
+	def __init__(self, tType, range=None, menzen=True):
 		# type means Mantsu, Pintsu, Tongtsu, East, South, West, North, Haku, Hatsu, 
-		# also shuhai, tsupai, loutouhai, chunchanpai
+		# also can be shuhai, tsupai, loutouhai, chunchanpai
 		self.tileType = tType
 
 		# koutsu, shuntsu, kantsu, ddoitsu
 		# mentsu, atama
-		self.completeType = cType
-		self.size = 3 if self.completeType in [koutsu, shuntsu, mentsu] else 2 if self.completeType in [ddoitsu, atama] else 4
+		# self.completeType = cType
+		self.size = 3 if self.tileType in [koutsu, shuntsu, mentsu] else 2 if self.tileType in [ddoitsu, atama] else 4
 
-		# 1-9 or 0 means doesn't care
+		# range canbe 1-9 or 0.
+		# 0 means doesn't care
 		self.range = range
 		self.menzen = menzen
 
 	def __str__(self):
-		return "%s%s %s%s"%(
+		return "%s tiles %s %s %s"%(
 			self.size,
-			" %s~%s"%(self.range.start, self.range.stop) if self.range else "",
-			"menzen " if self.menzen else "",
+			"%s~%s"%(self.range.start, self.range.stop) if self.range else "",
+			"menzen" if self.menzen else "",
 			self.tileType
 		)
 
 	def search(self, hand):
 		keys, values = list(hand.keys()), list(hand.values())
 		retVal = []
-
-		if self.completeType in [mentsu, shuntsu]:
-			x = {item//10:[] for item in hand}
-			for item in hand:
-				x[item//10].append(item%10)
-
-			for i in x:
-				diffs = [(sum((e[0]-e[1], e[0]-e[2])), e) for e in combinations(x[i], 3)]
-				retVal += [[Tile.getTileFromID(ee+i*10) for ee in e[1]] for e in diffs if e[0] in (0, -3, 3)]
-
-		if self.completeType in [koutsu, kantsu, ddoitsu, mentsu, atama]:
-			retVal += [[Tile.getTileFromID(item)] for item, count in hand.items() if self.size <= count]
-
-			# for item, count in hand.items():
-			# 	if self.size <= count:
-			# 		d = Tile.getTileFromID(item)
-			# 		retVal.append(d)
-
+		
+		x = {item//100-1:[] for item in hand}
+		for item in hand:
+			for i in range(0, hand[item]):
+				x[item//100-1].append((item//10%10, item))
+		
+		for i in x:
+			if self.tileType == atama or self.tileType == ddoitsu:
+				diffs = [(e[0][0] == e[1][0], e) for e in combinations(x[i], 2)]
+			elif self.tileType == kantsu:
+				diffs = [(sum((e[0][0]-e[1][0], e[1][0]-e[2][0], e[2][0]-e[3][0])), e) for e in combinations(x[i], 4)]
+			else:
+				diffs = [(sum((e[0][0]-e[1][0], e[0][0]-e[2][0])), (e[0][0]+e[1][0]+e[2][0])/e[0][0] == 3, e) for e in combinations(x[i], 3)]
+				
+			for e in diffs:
+				if self.tileType == koutsu:
+					print(e, sum((e[-1][0][0]-e[-1][1][0], e[-1][1][0]-e[-1][2][0])), e[-1][0][0], e[-1][1][0], e[-1][1][0]-e[-1][2][0])
+				if (self.tileType == mentsu and abs(e[0])%3 == 0) or \
+					(self.tileType == shuntsu and abs(e[0]) == 3) or \
+					(self.tileType == koutsu and e[1]) or \
+					(self.tileType == kantsu and e[0] == 0) or \
+					((self.tileType == atama or self.tileType == ddoitsu) and e[0]):
+					e = [str(ee[1]) for ee in e[-1]]
+					e.sort()
+					retVal.append(".".join(e))
+			
+		retVal = list(set(retVal))
+		retVal.sort()
+		
+		for i, v in enumerate(retVal):
+			v = [TileManager.getTileWithUID(int(e)) for e in v.split(".")]
+			retVal[i] = v
+				
 		return retVal
 
 
@@ -66,8 +87,8 @@ class Yaku:
 
 		self.terms = []
 
-	def addTerm(self, tileType, cType, range=None, menzen=True):
-		form = YakuForm(tileType, cType, range, menzen)
+	def addTerm(self, tileType, range=None, menzen=True):
+		form = YakuForm(tileType, range, menzen)
 		self.terms.append(form)
 
 	def __str__(self):
@@ -78,7 +99,8 @@ class Yaku:
 
 	def match(self, hand):
 		combs = [i.search(hand) for i in self.terms]
-
+		print(self.terms)
+		
 		sequences = list(product(*combs, repeat=1))
 		print(len(sequences))
 		removeLambda = (lambda x, i, d: (x.remove(d), True) if len(i) != len(set(i)) else False)
@@ -92,7 +114,7 @@ class Yaku:
 			if removeLambda(sequences, [str(e) for e in var], var):
 				i-=1
 			elif removeLambda(sequences, list(chain.from_iterable(var)), var):
-					i-=1
+				i-=1
 
 		return sequences
 	
@@ -101,20 +123,20 @@ class YakuManager:
 		self.yakus = []
 
 		tanyao = Yaku("tanyao", 1)
-		tanyao.addTerm(shuhai, mentsu, range(2,8))
-		tanyao.addTerm(shuhai, mentsu, range(2,8))
-		tanyao.addTerm(shuhai, mentsu, range(2,8))
-		tanyao.addTerm(shuhai, mentsu, range(2,8))
-		tanyao.addTerm(shuhai, ddoitsu, range(2,8))
+		tanyao.addTerm(shuhai, range(2,8))
+		tanyao.addTerm(shuhai, range(2,8))
+		tanyao.addTerm(shuhai, range(2,8))
+		tanyao.addTerm(shuhai, range(2,8))
+		tanyao.addTerm(ddoitsu, range(2,8))
 
 		self.yakus.append(tanyao)
 
 	def checkYaku(self, hand):
 		newHand = Counter([i.ID for i in hand])
 		correct = [i.match(newHand) for i in self.yakus]
-
-		for i in correct[0]:
-			print(i)
+		
+		# for i in correct[0]:
+		# 	print(i)
 
 def printHand(hand):
 	for i in hand:
@@ -123,12 +145,22 @@ def printHand(hand):
 if __name__ == "__main__":
 	ym = YakuManager()
 
-	tm = TileManager().getInstance()
-	hand = tm.getTiles("m2 m2 m2 m4 m4 s3 s4 s5 p5 p5 p5 p8 p7 p6")
+	tm = TileManager.getInstance()
+	hand = tm.getTiles("m2 m2 m2 m2 m3 m3 m4 m4 m3 s4 s5 p6 p7 p6")
 	# hand = tm.getRandomTile(14)
-	# hand = TileManager.sortTiles(hand)
- 
-	ym.checkYaku(hand)
+	# for i in hand:
+	# 	print(i)
+	hand = TileManager.sortTiles(hand)
+	# ym.checkYaku(hand)
+	d = YakuForm(koutsu, range(1,9), True)
+	# d = YakuForm(koutsu, range(1,9), True)
+	
+	newHand = Counter([i.UID for i in hand])
+	x = d.search(newHand)
+	# x.sort()
+	
+	print(len(x))
+	for i in x:
+		print([str(e) for e in i])
 
-
-
+	print(262-271, 271-261, sum([262-271, 271-261]))

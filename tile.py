@@ -1,5 +1,10 @@
+#!python3
 import random, re
+from AtomPrint import aprint as print
 
+def pic(tile):
+	return tile.__pic__()
+	
 class TileType:
 	names = ("test")
 
@@ -43,12 +48,13 @@ class Chun(TileType):
 	names = ("Chun", "chun")
 
 
-class Tile():
+class Tile:
 	NumTileTypes, CharTileTypes = [Mantsu(), Pintsu(), Soutsu()], [East(),South(),West(),North(),Haku(),Hatsu(),Chun()]
 	tileTypes = [type(i) for i in NumTileTypes]+[type(i) for i in CharTileTypes]
 	tileOrder = NumTileTypes+CharTileTypes
+	tileFontCharacter = [list("🀇🀈🀉🀊🀋🀌🀍🀎🀏"),list("🀙🀚🀛🀜🀝🀞🀟🀠🀡"), list("🀐🀑🀒🀓🀔🀕🀖🀗🀘"),"🀀","🀁","🀂","🀃","🀆","🀅","🀄"]
 
-	def __init__(self, pType = None, pNumber = 0, pTileOrilNum = 0, pDora = False):
+	def __init__(self, pType = None, pNumber = 1, pTileOrilNum = 0, pDora = False):
 		if pNumber == None and pType == None:
 			raise Exception
 		
@@ -72,7 +78,8 @@ class Tile():
 		self.UID += self.number*10+self.originNum
 
 		self.ID = (self.tileOrder.index(self.type))*10 + self.number
-
+		
+		# print(self.UID, self.ID)
 		# self.typeNumber = checker.Checker.typeNumber[checker.Checker.type.index(self.tileType)]
 
 	def getInfo(self):
@@ -83,6 +90,10 @@ class Tile():
 
 	def __str__(self):
 		return "%s %s"%(self.name, self.UID)
+	
+	def __pic__(self):
+		tile = Tile.tileFontCharacter[self.UID//100-1][self.UID%100//10-1]
+		return tile
 
 	def __eq__(self, t):
 		types = type(t)
@@ -119,43 +130,47 @@ class Tile():
 		return name
 		
 
-class TileManager:
+class _TileManager:
 	singleton = None
 
 	@staticmethod
 	def getInstance():
-		if TileManager.singleton == None:
-			TileManager.singleton = TileManager()
+		if _TileManager.singleton == None:
+			_TileManager.singleton = _TileManager()
 
-		return TileManager.singleton
+		return _TileManager.singleton
 
 
 	def __init__(self):
-		self.tiles, self.outTiles = [], []
-		self.tileFormats = [re.compile("((?:%s)[1-9])" % "|".join(["|".join(list(i.names)) for i in Tile.NumTileTypes])), re.compile("((?:%s)[1-9])" % " | ".join([str(i) for i in Tile.CharTileTypes]))]
+		self.tiles, self.outTiles, self.inTiles = {}, [], {}
+		self.tileFormats = [re.compile("(%s)([1-9])" % "|".join(["|".join(list(i.names)) for i in Tile.NumTileTypes])), re.compile("(%s)()" % "|".join(["|".join(i.names) for i in Tile.CharTileTypes]))]
 		self.createTiles()
+		
+		# for i in enumerate(self.inTiles):
+		# 	print(i[1], str(self.inTiles[i[1]]))
 		# print(self.tileFormats[0])
 
 	def createTiles(self):
 		for e in Tile.NumTileTypes:
 			for i in range(0, 9):
 				# print(e)
-				self.tiles.append(Tile(e, i+1, 1))
-				self.tiles.append(Tile(e, i+1, 2))
-				self.tiles.append(Tile(e, i+1, 3))
-				self.tiles.append(Tile(e, i+1, 4))
+				for z in range(0, 4):
+					x = Tile(e, i+1, z+1)
+					self.tiles[x.UID] = x;
+					self.inTiles[x.UID] = x;
+				
 
 		for e in Tile.CharTileTypes:
-			self.tiles.append(Tile(e, pTileOrilNum=1))
-			self.tiles.append(Tile(e, pTileOrilNum=2))
-			self.tiles.append(Tile(e, pTileOrilNum=3))
-			self.tiles.append(Tile(e, pTileOrilNum=4))
+			for z in range(0, 4):
+				x = Tile(e, pTileOrilNum=z+1)
+				self.tiles[x.UID] = x;
+				self.inTiles[x.UID] = x;
 
 	def getRandomTile(self, size=1):
-		tiles = random.sample(self.tiles, size)
+		tiles = random.sample(list(self.tiles.values()), size)
 		for i in tiles:
 			self.outTiles.append(i)
-			self.tiles.remove(i)
+			# self.tiles.remove(i)
 
 		return tiles
 
@@ -175,17 +190,40 @@ class TileManager:
 
 		return x
 
-	def getTile(self, tile):
-		for i in self.tiles:
-			if i == tile:
-				self.outTiles.append(i)
-				self.tiles.remove(i)
-				return i
+	def getTile(self, uid):
+		# print("uid", uid)
+		if uid[0] in Mantsu.names:
+			id = "m"
+		elif uid[0] in Pintsu.names:
+			id = "p"
+		elif uid[0] in Soutsu.names:
+			id = "s"
+		else:
+			id = uid[0]
+			
+		order = ["m", "p", "s", "east", "south", "west", "north", "haku", "hatsu", "chun"].index(id)
+		
+		if 3 <= order: index = 1
+		else: index = int(uid[1])
+		
+		order = (order+1)*100+index*10
+		tile = None
+		
+		for i in range(1,5):
+			# print(order+i, order+i in self.inTiles, len(self.inTiles))
+			
+			if order+i in self.inTiles:
+				tile = self.inTiles[order+i]
+				self.outTiles.append(tile)
+				self.inTiles.pop(order+i, None)
 				break
 		
-		pass
+		return tile
+	
+	def getTileWithUID(self, uid):
+		return self.tiles[uid]
 
-
+TileManager = _TileManager()
 """
 M = Mantz
 P = Pintz
@@ -202,15 +240,13 @@ C = Chuu
 """
 
 if __name__ == "__main__":
-	tm = TileManager().getInstance()
-	hand = tm.getTiles("m2, mantsu2, Mantsu2, soutsu3, s4, Soutsu5, p6, Pintsu7, pintsu8, p5, p5, p5, m4, m4")
+	tm = TileManager.getInstance()
+	hand = tm.getTiles("east, m2, mantsu2, Mantsu2, soutsu3, s4, Soutsu5, p6, Pintsu7, pintsu8, p5, p5, p5, m4")
 
 	# for i in hand:
 	# 	print(i)
 	# print(hand)
 	hand = tm.getRandomTile(14)
 	hand = TileManager.sortTiles(hand)
-
 	for i in hand:
-		print(i, i.ID)
-	
+		print(i)
