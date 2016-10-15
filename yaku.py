@@ -57,7 +57,8 @@ class YakuForm:
 				
 			for e in diffs:
 				if self.tileType == koutsu:
-					print(e, sum((e[-1][0][0]-e[-1][1][0], e[-1][1][0]-e[-1][2][0])), e[-1][0][0], e[-1][1][0], e[-1][1][0]-e[-1][2][0])
+					# print(e, sum((e[-1][0][0]-e[-1][1][0], e[-1][1][0]-e[-1][2][0])), e[-1][0][0], e[-1][1][0], e[-1][1][0]-e[-1][2][0])
+					pass
 				if (self.tileType == mentsu and abs(e[0])%3 == 0) or \
 					(self.tileType == shuntsu and abs(e[0]) == 3) or \
 					(self.tileType == koutsu and e[1]) or \
@@ -99,10 +100,11 @@ class Yaku:
 
 	def match(self, hand):
 		combs = [i.search(hand) for i in self.terms]
-		print(self.terms)
+		# print(self.terms)
+		print(combs)
 		
 		sequences = list(product(*combs, repeat=1))
-		print(len(sequences))
+		# print(len(sequences))
 		removeLambda = (lambda x, i, d: (x.remove(d), True) if len(i) != len(set(i)) else False)
 		
 		i=0
@@ -132,9 +134,10 @@ class YakuManager:
 		self.yakus.append(tanyao)
 
 	def checkYaku(self, hand):
-		newHand = Counter([i.ID for i in hand])
+		newHand = Counter([i.UID for i in hand])
 		correct = [i.match(newHand) for i in self.yakus]
 		
+		print(correct)
 		# for i in correct[0]:
 		# 	print(i)
 
@@ -151,16 +154,16 @@ if __name__ == "__main__":
 	# for i in hand:
 	# 	print(i)
 	hand = TileManager.sortTiles(hand)
-	# ym.checkYaku(hand)
-	d = YakuForm(koutsu, range(1,9), True)
+	ym.checkYaku(hand)
+	# d = YakuForm(koutsu, range(1,9), True)
 	# d = YakuForm(koutsu, range(1,9), True)
 	
-	newHand = Counter([i.UID for i in hand])
-	x = d.search(newHand)
-	# x.sort()
-	
-	print(len(x))
-	for i in x:
-		print([str(e) for e in i])
-
-	print(262-271, 271-261, sum([262-271, 271-261]))
+	# newHand = Counter([i.UID for i in hand])
+	# x = d.search(newHand)
+	# # x.sort()
+	# 
+	# print(len(x))
+	# for i in x:
+	# 	print([str(e) for e in i])
+	# 
+	# print(262-271, 271-261, sum([262-271, 271-261]))
