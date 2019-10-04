@@ -30,7 +30,7 @@ class _TileManager:
           x = Tile(e, i+1, z+1)
           self.tiles[x.UID] = x
           self.inTiles[x.UID] = x
-        
+
 
     for e in Tile.CharTileTypes:
       for z in range(0, 4):
@@ -45,8 +45,8 @@ class _TileManager:
       # self.tiles.remove(i)
 
     return tiles
-    
-    
+
+
   def get_drawable_tiles(self):
     result = []
 
@@ -89,27 +89,27 @@ class _TileManager:
     elif type_name in Soutsu.names:
       id = "s"
     else:
-      
       id = type_name
+
     order = ["m", "p", "s", "east", "south", "west", "north", "haku", "hatsu", "chun"].index(id)
-    
+
     if 3 <= order: index = 1
     else: index = int(uid[1])
-    
+
     order = (order+1)*100+index*10
     tile = None
-    
+
     for i in range(1,5):
       # print(order+i, order+i in self.inTiles, len(self.inTiles))
-      
+
       if order + i in self.inTiles:
         tile = self.inTiles[order + i]
         self.outTiles[tile.get_info()] = tile
         self.inTiles.pop(order + i, None)
         break
-    
+
     return tile
-  
+
   def getTileWithUID(self, uid):
     return self.tiles[uid]
 

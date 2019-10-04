@@ -4,7 +4,7 @@ from collections import defaultdict
 
 def pic(tile):
 	return tile.__pic__()
-	
+
 class TileType:
 	names = ("test")
 
@@ -17,7 +17,7 @@ class TileType:
 	def __str__(self):
 		return "<%s type>"%self.names[0]
 
-	
+
 	def get_short_name(self):
 		return min(self.names, key=lambda n: len(n))
 
@@ -61,7 +61,7 @@ class Tile:
 	def __init__(self, pType = None, pNumber = 1, pTileOrilNum = 0, pDora = False):
 		if pNumber == None and pType == None:
 			raise Exception
-		
+
 		if type(pType) == type and pType in self.tileTypes:
 			pType = pType()
 		elif type(pType) not in self.tileTypes:
@@ -88,7 +88,7 @@ class Tile:
 		self.possible_combinations = defaultdict(list)
 		self.init_possible_combinations()
 
-	
+
 	def init_possible_combinations(self):
 		if self.type in Tile.NumTileTypes:
 			self.is_koutsu_possible = True
@@ -101,18 +101,16 @@ class Tile:
 
 			if self.number < 9:
 				self.possible_combinations["koutsu"].append(self.number + 1)
-			
+
 			if self.number < 8:
 				self.possible_combinations["koutsu"].append(self.number + 2)
 
-		
 		self.possible_combinations["shuntsu"].append(self.number)
 
 	def get_info(self):
 		return (self.type.get_short_name(), self.number, self.originNum, self.dora)
 
 
-	
 	def distance(self, other):
 		if type(other) == str:
 			if other[0] in self.type.names:
@@ -125,11 +123,11 @@ class Tile:
 	def __str__(self):
 		return "%s %s"%(self.name, self.UID)
 
-	
+
 	def __repr__(self):
 		return self.__str__()
 
-	
+
 	def __pic__(self):
 		tile = Tile.tileFontCharacter[self.UID//100-1][self.UID%100//10-1]
 		return tile
@@ -154,7 +152,7 @@ class Tile:
 					return True
 				else:
 					return False
-			
+
 		elif types in self.tileOrder:
 			pass
 
@@ -165,33 +163,5 @@ class Tile:
 		name = types.names[0]
 		if types in Tile.NumTileTypes:
 			name += " "+str(number)
-		
+
 		return name
-		
-
-
-"""
-M = Mantz
-P = Pintz
-S = Soutz
-
-E = East
-O = sOuth
-W = West
-N = North
-
-H = Haku
-A = hAtsu
-C = Chuu
-"""
-
-if __name__ == "__main__":
-	tm = TileManager.getInstance()
-	hand = tm.getTiles("east, m2, mantsu2, Mantsu2, soutsu3, s4, Soutsu5, p6, Pintsu7, pintsu8, p5, p5, p5, m4")
-
-	# for i in hand:
-	# 	print(i)
-	# print(hand)
-	hand = tm.getRandomTile(14)
-	for i in TileManager.sortTiles(hand):
-		print(i)
