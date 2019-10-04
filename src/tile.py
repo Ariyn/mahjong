@@ -84,6 +84,7 @@ class Tile:
 		self.ID = (self.tileOrder.index(self.type))*10 + self.number
 
 		self.is_koutsu_possible = False
+		self.is_shuntsu_possible = True
 		self.possible_combinations = defaultdict(list)
 		self.init_possible_combinations()
 
@@ -105,11 +106,11 @@ class Tile:
 				self.possible_combinations["koutsu"].append(self.number + 2)
 
 		
-	def getInfo(self):
-		if self.error:
-			return False
-		else:
-			return self.tileType, self.number, self.dora
+		self.possible_combinations["shuntsu"].append(self.number)
+
+	def get_info(self):
+		return (self.type.get_short_name(), self.number, self.originNum, self.dora)
+
 
 	
 	def distance(self, other):

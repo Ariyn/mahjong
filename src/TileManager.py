@@ -14,10 +14,10 @@ class _TileManager:
 
 
   def __init__(self):
-    self.tiles, self.outTiles, self.inTiles = {}, [], {}
+    self.tiles, self.outTiles, self.inTiles = {}, {}, {}
     self.tileFormats = [re.compile("(%s)([1-9])" % "|".join(["|".join(list(i.names)) for i in Tile.NumTileTypes])), re.compile("(%s)()" % "|".join(["|".join(i.names) for i in Tile.CharTileTypes]))]
     self.createTiles()
-    
+
     # for i in enumerate(self.inTiles):
     #   print(i[1], str(self.inTiles[i[1]]))
     # print(self.tileFormats[0])
@@ -41,7 +41,7 @@ class _TileManager:
   def getRandomTile(self, size=1):
     tiles = random.sample(list(self.tiles.values()), size)
     for i in tiles:
-      self.outTiles.append(i)
+      self.outTiles[i.get_info()] = i
       # self.tiles.remove(i)
 
     return tiles
@@ -51,7 +51,7 @@ class _TileManager:
     result = []
 
     for t in self.tiles.values():
-      if t in self.outTiles:
+      if t.get_info() in self.outTiles:
         continue
 
       result.append(t)
@@ -76,16 +76,21 @@ class _TileManager:
     return x
 
   def getTile(self, uid):
-    # print("uid", uid)
-    if uid[0] in Mantsu.names:
+    parsed_id = re.search(r"([a-z]+)([0-9]*)", uid)
+    if parsed_id:
+      type_name, number = parsed_id.groups()
+    else:
+      raise AttributeError
+
+    if type_name in Mantsu.names:
       id = "m"
-    elif uid[0] in Pintsu.names:
+    elif type_name in Pintsu.names:
       id = "p"
-    elif uid[0] in Soutsu.names:
+    elif type_name in Soutsu.names:
       id = "s"
     else:
-      id = uid[0]
       
+      id = type_name
     order = ["m", "p", "s", "east", "south", "west", "north", "haku", "hatsu", "chun"].index(id)
     
     if 3 <= order: index = 1
@@ -99,7 +104,7 @@ class _TileManager:
       
       if order + i in self.inTiles:
         tile = self.inTiles[order + i]
-        self.outTiles.append(tile)
+        self.outTiles[tile.get_info()] = tile
         self.inTiles.pop(order + i, None)
         break
     
