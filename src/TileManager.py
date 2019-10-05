@@ -14,7 +14,8 @@ class _TileManager:
 
 
   def __init__(self):
-    self.tiles, self.outTiles, self.inTiles = {}, {}, {}
+    self.tiles, self.inTiles, self.outTiles = {}, {}, [[] for i in range(5)]
+    self.entire_dumpster, self.dumpster = [], [[] for i in range(4)]
     self.tileFormats = [re.compile("(%s)([1-9])" % "|".join(["|".join(list(i.names)) for i in Tile.NumTileTypes])), re.compile("(%s)()" % "|".join(["|".join(i.names) for i in Tile.CharTileTypes]))]
     self.createTiles()
 
@@ -38,25 +39,26 @@ class _TileManager:
         self.tiles[x.UID] = x
         self.inTiles[x.UID] = x
 
-  def getRandomTile(self, size=1):
+  def getRandomTile(self, player=0, size=1):
     tiles = random.sample(list(self.tiles.values()), size)
-    for i in tiles:
-      self.outTiles[i.get_info()] = i
-      # self.tiles.remove(i)
+    self.entire_dumpster += tiles
+    self.outTiles[player] += tiles
 
     return tiles
 
 
-  def get_drawable_tiles(self):
-    result = []
+  def get_dora_tile(self):
+    return self.getRandomTile(4)
 
-    for t in self.tiles.values():
-      if t.get_info() in self.outTiles:
-        continue
 
-      result.append(t)
+  def discard(self, player_num, tile):
+    self.dumpster[player_num].append(tile)
+    print("discard", player_num, tile, self.outTiles[player_num], "out")
+    self.outTiles[player_num].remove(tile)
 
-    return result
+
+  def get_drawable_tiles(self, player=0):
+    return list(set(self.tiles.values()) - set(self.outTiles[player]) - set(self.entire_dumpster))
 
 
   @staticmethod
@@ -75,7 +77,7 @@ class _TileManager:
 
     return x
 
-  def getTile(self, uid):
+  def getTile(self, uid, player=0):
     parsed_id = re.search(r"([a-z]+)([0-9]*)", uid)
     if parsed_id:
       type_name, number = parsed_id.groups()
@@ -104,7 +106,8 @@ class _TileManager:
 
       if order + i in self.inTiles:
         tile = self.inTiles[order + i]
-        self.outTiles[tile.get_info()] = tile
+        self.outTiles[player].append(tile)
+        self.entire_dumpster.append(tile)
         self.inTiles.pop(order + i, None)
         break
 
@@ -112,5 +115,16 @@ class _TileManager:
 
   def getTileWithUID(self, uid):
     return self.tiles[uid]
+
+
+  @staticmethod
+  def check_forms(hand):
+    pass
+
+
+  @staticmethod
+  def get_complete_combination(form, hand, target):
+    return [i[0] for i in form.calculate([1], hand, target) if 1 <= i[1]]
+
 
 TileManager = _TileManager()

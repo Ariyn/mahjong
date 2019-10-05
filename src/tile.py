@@ -156,6 +156,17 @@ class Tile:
 		elif types in self.tileOrder:
 			pass
 
+
+	def __gt__(self, other):
+		if type(other) != Tile:
+			raise NotImplementedError
+		return other.UID < self.UID
+
+
+	def __hash__(self):
+		return hash(self.UID * 13)
+
+
 	@staticmethod
 	def getTileFromID(id):
 		types, number = Tile.tileOrder[id//10], id%10

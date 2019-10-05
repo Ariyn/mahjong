@@ -15,7 +15,7 @@ def calculate(drawable_tiles, hand, target):
     for i in range(3 - completed_combination_size):
       possibility *= drawable_combination_size / 4 /len(drawable_tiles)
 
-    return possibility
+    return [((target, target, target), possibility)]
 
 
 def get_possible_combinations(target):
